@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="github-notifications-redux">
+
+  <schema id="org.gnome.shell.extensions.github-notifications-redux"
+          path="/org/gnome/shell/extensions/github-notifications-redux/">
+
+    <key name="token" type="s">
+      <default>''</default>
+      <summary>GitHub personal access token</summary>
+      <description>A GitHub personal access token with the "notifications" scope. Generate one at https://github.com/settings/tokens</description>
+    </key>
+
+    <key name="domain" type="s">
+      <default>'github.com'</default>
+      <summary>GitHub hostname</summary>
+      <description>The GitHub hostname. Only change this if you use GitHub Enterprise.</description>
+    </key>
+
+    <key name="handle" type="s">
+      <default>''</default>
+      <summary>GitHub username</summary>
+      <description>Your GitHub username (handle)</description>
+    </key>
+
+    <key name="refresh-interval" type="i">
+      <default>60</default>
+      <summary>Refresh interval in seconds</summary>
+      <description>How often to poll GitHub for new notifications. GitHub's API enforces a minimum of 60 seconds via the X-Poll-Interval header.</description>
+    </key>
+
+    <key name="show-alert" type="b">
+      <default>false</default>
+      <summary>Show desktop notifications</summary>
+      <description>Show a desktop notification when new GitHub notifications arrive</description>
+    </key>
+
+    <key name="show-participating-only" type="b">
+      <default>false</default>
+      <summary>Show participating only</summary>
+      <description>Only show notifications where you are directly participating (mentioned, review requested, assigned, etc.)</description>
+    </key>
+
+    <key name="hide-widget" type="b">
+      <default>false</default>
+      <summary>Hide widget when no notifications</summary>
+      <description>Hide the panel indicator when there are no unread notifications</description>
+    </key>
+
+    <key name="hide-notification-count" type="b">
+      <default>false</default>
+      <summary>Hide notification count</summary>
+      <description>Hide the number next to the GitHub icon in the panel</description>
+    </key>
+
+  </schema>
+</schemalist>
