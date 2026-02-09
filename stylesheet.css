@@ -1,3 +1,16 @@
+/*
+ * stylesheet.css — GitHub Notifications Redux
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * GNOME Shell uses St (Clutter/CSS subset) for styling, NOT GTK CSS.
+ * Only a limited set of CSS properties are supported.
+ *
+ * See: https://gjs-docs.gnome.org/st16/st.widget#css-styling
+ */
+
+/* ── Panel indicator count label ───────────────────────────────────────────── */
+
 .github-notifications-count {
     font-size: 0.8em;
     font-weight: bold;
@@ -7,23 +20,27 @@
     color: inherit;
 }
 
-/* Notification list items */
+/* ── Notification list items (popup menu rows) ─────────────────────────────── */
+
 .github-notif-item {
     padding: 4px 8px;
 }
 
+/* Left-hand icon indicating the notification type (PR, issue, etc.) */
 .github-notif-type-icon {
     padding-right: 8px;
     color: inherit;
     opacity: 0.7;
 }
 
+/* Vertical box holding the repo label and title label */
 .github-notif-text-box {
     padding: 0 8px 0 0;
     min-width: 200px;
     max-width: 400px;
 }
 
+/* Repository full name (e.g. "owner/repo") shown above the title */
 .github-notif-repo {
     font-size: 0.85em;
     font-weight: bold;
@@ -31,10 +48,13 @@
     opacity: 0.6;
 }
 
+/* Notification subject title */
 .github-notif-title {
     font-size: 0.95em;
     color: inherit;
 }
+
+/* ── Action buttons (open / mark-read) on each notification row ────────────── */
 
 .github-notif-btn {
     border-radius: 50%;
@@ -46,20 +66,26 @@
     background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* "Open in browser" button highlight colour (GitHub blue) */
 .github-notif-open-btn:hover {
     color: #58a6ff;
 }
 
+/* "Mark as read" button highlight colour (GitHub green) */
 .github-notif-read-btn:hover {
     color: #3fb950;
 }
 
+/* ── Empty / overflow labels ───────────────────────────────────────────────── */
+
+/* Shown when there are no unread notifications */
 .github-notif-empty {
     font-style: italic;
     color: inherit;
     opacity: 0.5;
 }
 
+/* Shown when the notification list exceeds MAX_MENU_ITEMS */
 .github-notif-overflow {
     font-style: italic;
     color: inherit;

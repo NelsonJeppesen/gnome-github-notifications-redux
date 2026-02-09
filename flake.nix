@@ -56,7 +56,7 @@
           meta = with pkgs.lib; {
             description = "GitHub notification count in the GNOME Shell top panel";
             homepage = "https://github.com/NelsonJeppesen/gnome-github-notifications-redux";
-            license = licenses.mit;
+            license = licenses.gpl3Plus;
             platforms = platforms.linux;
           };
         };

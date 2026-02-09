@@ -1,3 +1,18 @@
+/*
+ * prefs.js — GitHub Notifications Redux
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ * Copyright (c) 2026 Nelson Alex Jeppesen
+ *
+ * Preferences window for the extension, built with libadwaita widgets.
+ * Runs in a separate GTK 4 process — never import Clutter/St/Shell here.
+ *
+ * Pages:
+ *   1. Authentication — domain, personal access token, connection test
+ *   2. Behavior       — refresh interval, desktop alerts, participating-only,
+ *                        auto-hide indicator, hide count
+ */
+
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk?version=4.0';
@@ -9,155 +24,233 @@ import {ExtensionPreferences, gettext as _} from
 
 
 export default class GitHubNotificationsPreferences extends ExtensionPreferences {
+    /**
+     * Populate the Adwaita preferences window with pages and rows.
+     *
+     * Called automatically by GNOME Shell when the user opens the extension
+     * preferences dialog.
+     *
+     * @param {Adw.PreferencesWindow} window — the window to fill.
+     */
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
 
-        // -- Authentication page ----------------------------------------------
-        const authPage = new Adw.PreferencesPage({
+        this._buildAuthPage(window, settings);
+        this._buildBehaviorPage(window, settings);
+    }
+
+    // ── Authentication Page ───────────────────────────────────────────────────
+
+    /**
+     * Build the "Authentication" preferences page.
+     *
+     * Contains the GitHub hostname entry, personal access token entry,
+     * help text, and a connection test button.
+     *
+     * @param {Adw.PreferencesWindow} window
+     * @param {Gio.Settings} settings
+     */
+    _buildAuthPage(window, settings) {
+        const page = new Adw.PreferencesPage({
             title: _('Authentication'),
             icon_name: 'dialog-password-symbolic',
         });
-        window.add(authPage);
+        window.add(page);
 
-        const authGroup = new Adw.PreferencesGroup({
+        /* ── Credentials group ────────────────────────────────────────── */
+        const credGroup = new Adw.PreferencesGroup({
             title: _('GitHub Credentials'),
-            description: _('Configure your GitHub access token and username'),
+            description: _('Configure your GitHub access token'),
         });
-        authPage.add(authGroup);
+        page.add(credGroup);
 
-        // Domain
+        /* Domain (most users leave this as github.com) */
         const domainRow = new Adw.EntryRow({
             title: _('GitHub Hostname'),
             show_apply_button: true,
         });
-        settings.bind('domain', domainRow, 'text', Gio.SettingsBindFlags.DEFAULT);
-        authGroup.add(domainRow);
+        settings.bind('domain', domainRow, 'text',
+            Gio.SettingsBindFlags.DEFAULT);
+        credGroup.add(domainRow);
 
-        // Token
+        /* Personal access token (masked input) */
         const tokenRow = new Adw.PasswordEntryRow({
             title: _('Personal Access Token'),
             show_apply_button: true,
         });
-        settings.bind('token', tokenRow, 'text', Gio.SettingsBindFlags.DEFAULT);
-        authGroup.add(tokenRow);
+        settings.bind('token', tokenRow, 'text',
+            Gio.SettingsBindFlags.DEFAULT);
+        credGroup.add(tokenRow);
 
-        // Handle
-        const handleRow = new Adw.EntryRow({
-            title: _('GitHub Username'),
-            show_apply_button: true,
-        });
-        settings.bind('handle', handleRow, 'text', Gio.SettingsBindFlags.DEFAULT);
-        authGroup.add(handleRow);
-
-        // Help text
+        /* ── Help text group ──────────────────────────────────────────── */
         const helpGroup = new Adw.PreferencesGroup();
-        authPage.add(helpGroup);
+        page.add(helpGroup);
 
-        const helpLabel = new Adw.ActionRow({
+        helpGroup.add(new Adw.ActionRow({
             title: _('How to get a token'),
             subtitle: _(
                 'Visit https://github.com/settings/tokens/new\n' +
-                'Select only the "notifications" scope, then generate and paste above.\n' +
-                'Only GitHub Enterprise users need to change the hostname.'
-            ),
+                'Select only the "notifications" scope, then generate ' +
+                'and paste above.\n' +
+                'Only GitHub Enterprise users need to change the hostname.'),
             activatable: false,
-        });
-        helpGroup.add(helpLabel);
+        }));
 
-        // -- Test connection ------------------------------------------------------
-        const testGroup = new Adw.PreferencesGroup({
+        /* ── Connection test group ────────────────────────────────────── */
+        this._buildTestRow(page, settings);
+    }
+
+    /**
+     * Build the "Test Connection" row that verifies the token against the
+     * GitHub API with a single lightweight request.
+     *
+     * @param {Adw.PreferencesPage} page
+     * @param {Gio.Settings} settings
+     */
+    _buildTestRow(page, settings) {
+        const group = new Adw.PreferencesGroup({
             title: _('Connection Test'),
         });
-        authPage.add(testGroup);
+        page.add(group);
 
-        const testRow = new Adw.ActionRow({
+        const row = new Adw.ActionRow({
             title: _('Verify Credentials'),
             subtitle: _('Test your token against the GitHub API'),
         });
 
-        const testStatusLabel = new Gtk.Label({
+        /* Status label (updated after the test completes) */
+        const statusLabel = new Gtk.Label({
             label: '',
             hexpand: true,
             xalign: 1,
             css_classes: ['dim-label'],
         });
-        testRow.add_suffix(testStatusLabel);
+        row.add_suffix(statusLabel);
 
-        const testButton = new Gtk.Button({
+        /* "Test" button */
+        const btn = new Gtk.Button({
             label: _('Test'),
             valign: Gtk.Align.CENTER,
             css_classes: ['suggested-action'],
         });
-        testRow.add_suffix(testButton);
-        testRow.set_activatable_widget(testButton);
+        row.add_suffix(btn);
+        row.set_activatable_widget(btn);
 
-        testButton.connect('clicked', () => {
-            const domain = settings.get_string('domain');
-            const token = settings.get_string('token');
-
-            if (!token) {
-                testStatusLabel.label = _('No token set');
-                testStatusLabel.css_classes = ['error'];
-                return;
-            }
-
-            testStatusLabel.label = _('Testing...');
-            testStatusLabel.css_classes = ['dim-label'];
-            testButton.sensitive = false;
-
-            const session = new Soup.Session({
-                user_agent: 'gnome-github-notifications-redux',
-            });
-            const url = `https://api.${domain}/notifications?per_page=1`;
-            const message = Soup.Message.new('GET', url);
-            message.get_request_headers().append('Authorization', `Bearer ${token}`);
-            message.get_request_headers().append('Accept', 'application/vnd.github+json');
-
-            session.send_and_read_async(
-                message, GLib.PRIORITY_DEFAULT, null,
-                (_session, result) => {
-                    try {
-                        session.send_and_read_finish(result);
-                        const status = message.get_status();
-
-                        if (status === Soup.Status.OK || status === Soup.Status.NOT_MODIFIED) {
-                            const scopes = message.get_response_headers().get_one('X-OAuth-Scopes') || '';
-                            const rateRemaining = message.get_response_headers().get_one('X-RateLimit-Remaining') || '?';
-                            testStatusLabel.label = _(`OK (rate: ${rateRemaining}, scopes: ${scopes || 'n/a'})`);
-                            testStatusLabel.css_classes = ['success'];
-                        } else if (status === Soup.Status.UNAUTHORIZED) {
-                            testStatusLabel.label = _('401 Unauthorized - bad token');
-                            testStatusLabel.css_classes = ['error'];
-                        } else {
-                            testStatusLabel.label = _(`HTTP ${status}`);
-                            testStatusLabel.css_classes = ['error'];
-                        }
-                    } catch (e) {
-                        testStatusLabel.label = _(`Error: ${e.message}`);
-                        testStatusLabel.css_classes = ['error'];
-                    } finally {
-                        testButton.sensitive = true;
-                    }
-                },
-            );
+        btn.connect('clicked', () => {
+            this._runConnectionTest(settings, statusLabel, btn);
         });
 
-        testGroup.add(testRow);
+        group.add(row);
+    }
 
-        // -- Behavior page ----------------------------------------------------
-        const behaviorPage = new Adw.PreferencesPage({
+    /**
+     * Execute a lightweight API call to verify the configured credentials.
+     *
+     * Fetches a single notification (per_page=1) and inspects the HTTP
+     * status to determine whether the token is valid.  Updates the status
+     * label with the result.
+     *
+     * @param {Gio.Settings} settings
+     * @param {Gtk.Label} statusLabel — label to show result text.
+     * @param {Gtk.Button} btn — button to disable during the test.
+     */
+    _runConnectionTest(settings, statusLabel, btn) {
+        const domain = settings.get_string('domain');
+        const token = settings.get_string('token');
+
+        if (!token) {
+            statusLabel.label = _('No token set');
+            statusLabel.css_classes = ['error'];
+            return;
+        }
+
+        statusLabel.label = _('Testing\u2026');
+        statusLabel.css_classes = ['dim-label'];
+        btn.sensitive = false;
+
+        const session = new Soup.Session({
+            user_agent: 'gnome-github-notifications-redux',
+        });
+
+        /* Build URL the same way the main extension does */
+        const base = domain === 'github.com'
+            ? 'https://api.github.com'
+            : `https://${domain}/api/v3`;
+        const url = `${base}/notifications?per_page=1`;
+
+        const message = Soup.Message.new('GET', url);
+        message.get_request_headers().append(
+            'Authorization', `Bearer ${token}`);
+        message.get_request_headers().append(
+            'Accept', 'application/vnd.github+json');
+
+        session.send_and_read_async(
+            message, GLib.PRIORITY_DEFAULT, null,
+            (_session, result) => {
+                try {
+                    session.send_and_read_finish(result);
+                    const status = message.get_status();
+
+                    if (status === Soup.Status.OK ||
+                        status === Soup.Status.NOT_MODIFIED) {
+                        const headers = message.get_response_headers();
+                        const scopes =
+                            headers.get_one('X-OAuth-Scopes') || '';
+                        const remaining =
+                            headers.get_one('X-RateLimit-Remaining') || '?';
+
+                        /* Translators: shown after a successful connection
+                           test; %s1 = remaining rate limit, %s2 = scopes */
+                        statusLabel.label =
+                            _('OK') + ` (rate: ${remaining}, ` +
+                            `scopes: ${scopes || 'n/a'})`;
+                        statusLabel.css_classes = ['success'];
+                    } else if (status === Soup.Status.UNAUTHORIZED) {
+                        statusLabel.label =
+                            _('401 Unauthorized \u2013 bad token');
+                        statusLabel.css_classes = ['error'];
+                    } else {
+                        statusLabel.label = `HTTP ${status}`;
+                        statusLabel.css_classes = ['error'];
+                    }
+                } catch (e) {
+                    statusLabel.label = e.message;
+                    statusLabel.css_classes = ['error'];
+                } finally {
+                    btn.sensitive = true;
+                }
+            },
+        );
+    }
+
+    // ── Behavior Page ─────────────────────────────────────────────────────────
+
+    /**
+     * Build the "Behavior" preferences page.
+     *
+     * Contains the refresh interval spinner, desktop notification toggle,
+     * participating-only toggle, auto-hide indicator toggle, and hide-count
+     * toggle.
+     *
+     * @param {Adw.PreferencesWindow} window
+     * @param {Gio.Settings} settings
+     */
+    _buildBehaviorPage(window, settings) {
+        const page = new Adw.PreferencesPage({
             title: _('Behavior'),
             icon_name: 'preferences-system-symbolic',
         });
-        window.add(behaviorPage);
+        window.add(page);
 
+        /* ── Notifications group ──────────────────────────────────────── */
         const notifGroup = new Adw.PreferencesGroup({
             title: _('Notifications'),
-            description: _('Configure how notifications are fetched and displayed'),
+            description: _(
+                'Configure how notifications are fetched and displayed'),
         });
-        behaviorPage.add(notifGroup);
+        page.add(notifGroup);
 
-        // Refresh interval
+        /* Refresh interval (seconds) — minimum 60s per GitHub API */
         const refreshAdj = new Gtk.Adjustment({
             lower: 60,
             upper: 86400,
@@ -166,47 +259,51 @@ export default class GitHubNotificationsPreferences extends ExtensionPreferences
         });
         const refreshRow = new Adw.SpinRow({
             title: _('Refresh Interval (seconds)'),
-            subtitle: _('Minimum 60s enforced by GitHub API'),
+            subtitle: _('Minimum 60 s enforced by GitHub API'),
             adjustment: refreshAdj,
         });
         settings.bind('refresh-interval', refreshAdj, 'value',
             Gio.SettingsBindFlags.DEFAULT);
         notifGroup.add(refreshRow);
 
-        // Show alerts
+        /* Desktop notifications toggle */
         const alertRow = new Adw.SwitchRow({
             title: _('Desktop Notifications'),
-            subtitle: _('Show a desktop notification when new notifications arrive'),
+            subtitle: _(
+                'Show a desktop notification when new notifications arrive'),
         });
-        settings.bind('show-alert', alertRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        settings.bind('show-alert', alertRow, 'active',
+            Gio.SettingsBindFlags.DEFAULT);
         notifGroup.add(alertRow);
 
-        // Participating only
+        /* Participating-only toggle */
         const participatingRow = new Adw.SwitchRow({
             title: _('Participating Only'),
-            subtitle: _('Only show notifications where you are directly involved'),
+            subtitle: _(
+                'Only show notifications where you are directly involved'),
         });
         settings.bind('show-participating-only', participatingRow, 'active',
             Gio.SettingsBindFlags.DEFAULT);
         notifGroup.add(participatingRow);
 
-        // -- Appearance -------------------------------------------------------
+        /* ── Appearance group ─────────────────────────────────────────── */
         const appearanceGroup = new Adw.PreferencesGroup({
             title: _('Appearance'),
             description: _('Configure the panel indicator appearance'),
         });
-        behaviorPage.add(appearanceGroup);
+        page.add(appearanceGroup);
 
-        // Hide widget
+        /* Auto-hide indicator when no notifications */
         const hideWidgetRow = new Adw.SwitchRow({
             title: _('Auto-hide Indicator'),
-            subtitle: _('Hide the panel icon when there are no notifications'),
+            subtitle: _(
+                'Hide the panel icon when there are no notifications'),
         });
         settings.bind('hide-widget', hideWidgetRow, 'active',
             Gio.SettingsBindFlags.DEFAULT);
         appearanceGroup.add(hideWidgetRow);
 
-        // Hide count
+        /* Hide notification count label */
         const hideCountRow = new Adw.SwitchRow({
             title: _('Hide Count'),
             subtitle: _('Hide the notification count number'),

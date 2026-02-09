@@ -1,55 +1,84 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GSettings schema for GitHub Notifications Redux.
+
+  SPDX-License-Identifier: GPL-3.0-or-later
+
+  Schema ID and path follow the GNOME Shell extensions convention:
+    ID:   org.gnome.shell.extensions.<extension-name>
+    Path: /org/gnome/shell/extensions/<extension-name>/
+-->
 <schemalist gettext-domain="github-notifications-redux">
 
   <schema id="org.gnome.shell.extensions.github-notifications-redux"
           path="/org/gnome/shell/extensions/github-notifications-redux/">
 
+    <!-- GitHub personal access token (PAT) with the "notifications" scope.
+         Generate one at https://github.com/settings/tokens -->
     <key name="token" type="s">
       <default>''</default>
       <summary>GitHub personal access token</summary>
-      <description>A GitHub personal access token with the "notifications" scope. Generate one at https://github.com/settings/tokens</description>
+      <description>
+        A GitHub personal access token with the "notifications" scope.
+        Generate one at https://github.com/settings/tokens
+      </description>
     </key>
 
+    <!-- GitHub hostname — only change for GitHub Enterprise instances -->
     <key name="domain" type="s">
       <default>'github.com'</default>
       <summary>GitHub hostname</summary>
-      <description>The GitHub hostname. Only change this if you use GitHub Enterprise.</description>
+      <description>
+        The GitHub hostname.  Only change this if you use GitHub Enterprise.
+      </description>
     </key>
 
-    <key name="handle" type="s">
-      <default>''</default>
-      <summary>GitHub username</summary>
-      <description>Your GitHub username (handle)</description>
-    </key>
-
+    <!-- Polling interval in seconds.  GitHub enforces a minimum of 60 s
+         via the X-Poll-Interval response header. -->
     <key name="refresh-interval" type="i">
       <default>60</default>
       <summary>Refresh interval in seconds</summary>
-      <description>How often to poll GitHub for new notifications. GitHub's API enforces a minimum of 60 seconds via the X-Poll-Interval header.</description>
+      <description>
+        How often to poll GitHub for new notifications.  GitHub's API enforces
+        a minimum of 60 seconds via the X-Poll-Interval header.
+      </description>
     </key>
 
+    <!-- Whether to show a desktop notification on new items -->
     <key name="show-alert" type="b">
       <default>false</default>
       <summary>Show desktop notifications</summary>
-      <description>Show a desktop notification when new GitHub notifications arrive</description>
+      <description>
+        Show a desktop notification when new GitHub notifications arrive.
+      </description>
     </key>
 
+    <!-- Filter to only "participating" notifications -->
     <key name="show-participating-only" type="b">
       <default>false</default>
       <summary>Show participating only</summary>
-      <description>Only show notifications where you are directly participating (mentioned, review requested, assigned, etc.)</description>
+      <description>
+        Only show notifications where you are directly participating
+        (mentioned, review requested, assigned, etc.).
+      </description>
     </key>
 
+    <!-- Auto-hide the panel indicator when there are zero notifications -->
     <key name="hide-widget" type="b">
       <default>false</default>
       <summary>Hide widget when no notifications</summary>
-      <description>Hide the panel indicator when there are no unread notifications</description>
+      <description>
+        Hide the panel indicator when there are no unread notifications.
+      </description>
     </key>
 
+    <!-- Hide the numeric count next to the GitHub icon -->
     <key name="hide-notification-count" type="b">
       <default>false</default>
       <summary>Hide notification count</summary>
-      <description>Hide the number next to the GitHub icon in the panel</description>
+      <description>
+        Hide the number next to the GitHub icon in the panel.
+      </description>
     </key>
 
   </schema>
