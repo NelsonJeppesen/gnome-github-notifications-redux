@@ -1,6 +1,8 @@
+import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk?version=4.0';
 import Adw from 'gi://Adw';
+import Soup from 'gi://Soup?version=3.0';
 
 import {ExtensionPreferences, gettext as _} from
     'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
@@ -61,6 +63,86 @@ export default class GitHubNotificationsPreferences extends ExtensionPreferences
             activatable: false,
         });
         helpGroup.add(helpLabel);
+
+        // -- Test connection ------------------------------------------------------
+        const testGroup = new Adw.PreferencesGroup({
+            title: _('Connection Test'),
+        });
+        authPage.add(testGroup);
+
+        const testRow = new Adw.ActionRow({
+            title: _('Verify Credentials'),
+            subtitle: _('Test your token against the GitHub API'),
+        });
+
+        const testStatusLabel = new Gtk.Label({
+            label: '',
+            hexpand: true,
+            xalign: 1,
+            css_classes: ['dim-label'],
+        });
+        testRow.add_suffix(testStatusLabel);
+
+        const testButton = new Gtk.Button({
+            label: _('Test'),
+            valign: Gtk.Align.CENTER,
+            css_classes: ['suggested-action'],
+        });
+        testRow.add_suffix(testButton);
+        testRow.set_activatable_widget(testButton);
+
+        testButton.connect('clicked', () => {
+            const domain = settings.get_string('domain');
+            const token = settings.get_string('token');
+
+            if (!token) {
+                testStatusLabel.label = _('No token set');
+                testStatusLabel.css_classes = ['error'];
+                return;
+            }
+
+            testStatusLabel.label = _('Testing...');
+            testStatusLabel.css_classes = ['dim-label'];
+            testButton.sensitive = false;
+
+            const session = new Soup.Session({
+                user_agent: 'gnome-github-notifications-redux',
+            });
+            const url = `https://api.${domain}/notifications?per_page=1`;
+            const message = Soup.Message.new('GET', url);
+            message.get_request_headers().append('Authorization', `Bearer ${token}`);
+            message.get_request_headers().append('Accept', 'application/vnd.github+json');
+
+            session.send_and_read_async(
+                message, GLib.PRIORITY_DEFAULT, null,
+                (_session, result) => {
+                    try {
+                        session.send_and_read_finish(result);
+                        const status = message.get_status();
+
+                        if (status === Soup.Status.OK || status === Soup.Status.NOT_MODIFIED) {
+                            const scopes = message.get_response_headers().get_one('X-OAuth-Scopes') || '';
+                            const rateRemaining = message.get_response_headers().get_one('X-RateLimit-Remaining') || '?';
+                            testStatusLabel.label = _(`OK (rate: ${rateRemaining}, scopes: ${scopes || 'n/a'})`);
+                            testStatusLabel.css_classes = ['success'];
+                        } else if (status === Soup.Status.UNAUTHORIZED) {
+                            testStatusLabel.label = _('401 Unauthorized - bad token');
+                            testStatusLabel.css_classes = ['error'];
+                        } else {
+                            testStatusLabel.label = _(`HTTP ${status}`);
+                            testStatusLabel.css_classes = ['error'];
+                        }
+                    } catch (e) {
+                        testStatusLabel.label = _(`Error: ${e.message}`);
+                        testStatusLabel.css_classes = ['error'];
+                    } finally {
+                        testButton.sensitive = true;
+                    }
+                },
+            );
+        });
+
+        testGroup.add(testRow);
 
         // -- Behavior page ----------------------------------------------------
         const behaviorPage = new Adw.PreferencesPage({

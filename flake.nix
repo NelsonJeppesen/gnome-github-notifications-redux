@@ -83,6 +83,12 @@
             echo "Done. Restart GNOME Shell and enable:"
             echo "  gnome-extensions enable ''${UUID}"
           '';
+
+          # nix run .#test-nested
+          # nix run .#test-nested -- --prefs
+          test-nested = pkgs.writeShellScriptBin "test-nested" ''
+            exec bash "${self}/test-nested.sh" "$@"
+          '';
         };
 
         # nix flake check
@@ -162,6 +168,8 @@
             echo "  nix flake check    - run all checks (schema, lint, metadata, svg)"
             echo "  nix run .#install  - install to ~/.local/share/gnome-shell/extensions/"
             echo "  bash install.sh    - quick local install"
+            echo "  bash test-nested.sh         - launch nested GNOME Shell (1000x1000)"
+            echo "  bash test-nested.sh --prefs - same, then open the prefs dialog"
             echo ""
           '';
         };
