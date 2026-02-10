@@ -493,10 +493,12 @@ export default class GitHubNotificationsExtension extends Extension {
         message.get_request_headers().append(
             'Accept', 'application/vnd.github+json');
 
-        /* Conditional request to avoid burning API quota */
-        if (this._lastModified)
-            message.get_request_headers().append(
-                'If-Modified-Since', this._lastModified);
+        /*
+         * Skip conditional requests (If-Modified-Since) so that every poll
+         * returns the full unread notification list.  The 304 shortcut can
+         * cause stale/incomplete results when notifications arrive between
+         * polls.
+         */
 
         try {
             const bytes = await this._httpSession.send_and_read_async(
@@ -508,7 +510,7 @@ export default class GitHubNotificationsExtension extends Extension {
                 status === Soup.Status.NOT_MODIFIED) {
                 const responseHeaders = message.get_response_headers();
 
-                /* Cache the Last-Modified header for conditional requests */
+                /* Cache the Last-Modified header (informational) */
                 const lastMod = responseHeaders.get_one('Last-Modified');
                 if (lastMod)
                     this._lastModified = lastMod;
