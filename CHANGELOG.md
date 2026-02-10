@@ -4,6 +4,14 @@ All notable changes to GitHub Notifications Redux are documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.1] - 2026-02-10
+
+### Fixed
+
+- Auto-refresh returning fewer notifications than manual "Refresh Now" — stopped
+  sending `If-Modified-Since` on polling requests so every fetch gets the full
+  unread notification list instead of a potentially stale 304 Not Modified.
+
 ## [1.0.0] - 2026-02-09
 
 First release targeting GNOME Shell 49, fully compliant with
@@ -72,4 +80,5 @@ First release targeting GNOME Shell 49, fully compliant with
   `_buildBehaviorPage`).
 - Comprehensive JSDoc and inline comments added to all files.
 
+[1.0.1]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/releases/tag/v1.0.0
