@@ -652,7 +652,7 @@ export default class GitHubNotificationsExtension extends Extension {
                     ? 'You have 1 unread notification'
                     : `You have ${count} unread notifications`,
             });
-            notification.setTransient(true);
+            notification.isTransient = true;
             notification.connect('activated', () =>
                 this._openNotifications());
 

@@ -8,6 +8,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Desktop notifications never showing — `notification.setTransient(true)` threw
+  a TypeError (no such method in GNOME Shell 49's MessageTray API), which was
+  silently caught before `addNotification()` could run. Replaced with the
+  correct GObject property setter `notification.isTransient = true`.
 - Release notification URLs opening as 404 — the GitHub API returns a numeric
   release ID (`/releases/12345`) that doesn't work in the browser. Now fetches
   the release details to resolve the correct tag-based URL
