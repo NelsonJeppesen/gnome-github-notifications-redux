@@ -728,6 +728,15 @@ export default class GitHubNotificationsExtension extends Extension {
                     .replace(/\/pulls\//, '/pull/')
                     .replace(/\/commits\//, '/commit/');
 
+                /*
+                 * Release URLs from the API contain a numeric ID
+                 * (e.g. /releases/12345) that 404s in the browser.
+                 * Fall back to the repo releases page; the async
+                 * _fetchReleaseTagUrl path handles the precise URL.
+                 */
+                if (/\/releases\/\d+$/.test(htmlUrl) && repoFullName)
+                    return `https://${domain}/${repoFullName}/releases`;
+
                 return htmlUrl;
             } catch (_) {
                 /* fall through to repo/global fallback */
@@ -743,13 +752,82 @@ export default class GitHubNotificationsExtension extends Extension {
     }
 
     /**
+     * Fetch the browser-friendly URL for a release notification.
+     *
+     * The GitHub Notifications API returns release subject URLs like
+     *   https://api.github.com/repos/owner/repo/releases/12345
+     * where 12345 is an internal numeric ID that does not work in the
+     * browser (results in 404).  This method fetches that API endpoint
+     * to obtain the tag_name, then constructs the correct browser URL:
+     *   https://github.com/owner/repo/releases/tag/v1.2.3
+     *
+     * @param {string} apiUrl — The release API URL (subject.url).
+     * @param {string} repoFullName — e.g. "hashicorp/terraform".
+     * @returns {Promise<string|null>} The browser URL, or null on failure.
+     */
+    async _fetchReleaseTagUrl(apiUrl, repoFullName) {
+        if (!this._token || !this._httpSession || !apiUrl)
+            return null;
+
+        const message = Soup.Message.new('GET', apiUrl);
+        message.get_request_headers().append(
+            'Authorization', `Bearer ${this._token}`);
+        message.get_request_headers().append(
+            'Accept', 'application/vnd.github+json');
+
+        try {
+            const bytes = await this._httpSession.send_and_read_async(
+                message, GLib.PRIORITY_DEFAULT, null);
+
+            if (message.get_status() !== Soup.Status.OK || !bytes)
+                return null;
+
+            const data = bytes.get_data();
+            if (!data)
+                return null;
+
+            const text = new TextDecoder('utf-8').decode(data);
+            const release = JSON.parse(text);
+
+            if (release.html_url)
+                return release.html_url;
+
+            if (release.tag_name && repoFullName) {
+                const domain = this._domain;
+                return `https://${domain}/${repoFullName}/releases/tag/${release.tag_name}`;
+            }
+        } catch (e) {
+            console.error(
+                `[GitHub Notifications] Failed to resolve release URL: ${e.message}`);
+        }
+
+        return null;
+    }
+
+    /**
      * Open a single notification's subject URL in the default browser.
+     *
+     * For release notifications, makes an additional API call to resolve
+     * the correct tag-based URL before opening.
      *
      * @param {Object} notif — GitHub notification object.
      */
-    _openSingleNotification(notif) {
+    async _openSingleNotification(notif) {
         try {
-            const url = this._resolveNotificationUrl(notif);
+            let url;
+
+            /* Release URLs need special handling: the API returns a
+             * numeric ID that doesn't work in the browser. */
+            if (notif.subject?.type === 'Release' && notif.subject?.url) {
+                url = await this._fetchReleaseTagUrl(
+                    notif.subject.url,
+                    notif.repository?.full_name);
+            }
+
+            /* Fall back to the standard URL resolution */
+            if (!url)
+                url = this._resolveNotificationUrl(notif);
+
             Gio.AppInfo.launch_default_for_uri(url, null);
         } catch (e) {
             console.error(

@@ -4,6 +4,15 @@ All notable changes to GitHub Notifications Redux are documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.2] - 2026-02-11
+
+### Fixed
+
+- Release notification URLs opening as 404 — the GitHub API returns a numeric
+  release ID (`/releases/12345`) that doesn't work in the browser. Now fetches
+  the release details to resolve the correct tag-based URL
+  (`/releases/tag/v1.2.3`), with a fallback to the repo's releases page.
+
 ## [1.0.1] - 2026-02-10
 
 ### Fixed
@@ -80,5 +89,6 @@ First release targeting GNOME Shell 49, fully compliant with
   `_buildBehaviorPage`).
 - Comprehensive JSDoc and inline comments added to all files.
 
+[1.0.2]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/releases/tag/v1.0.0
