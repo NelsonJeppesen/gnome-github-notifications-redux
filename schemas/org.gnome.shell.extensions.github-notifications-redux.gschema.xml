@@ -81,5 +81,17 @@
       </description>
     </key>
 
+    <!-- How to group notifications in the popup menu -->
+    <key name="group-by" type="s">
+      <default>'none'</default>
+      <summary>Group notifications by</summary>
+      <description>
+        How to group notifications in the popup menu.
+        Possible values: "none" (flat list, default), "repo" (by repository),
+        "type" (by subject type: PR, issue, etc.), "reason" (by notification
+        reason: mention, review requested, etc.).
+      </description>
+    </key>
+
   </schema>
 </schemalist>

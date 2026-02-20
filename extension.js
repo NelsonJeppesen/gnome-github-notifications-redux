@@ -50,6 +50,34 @@ const TYPE_ICONS = {
 const DEFAULT_ICON = 'mail-unread-symbolic';
 
 /**
+ * Human-readable labels for GitHub notification subject types.
+ */
+const TYPE_LABELS = {
+    PullRequest: 'Pull Requests',
+    Issue: 'Issues',
+    Commit: 'Commits',
+    Release: 'Releases',
+};
+
+/**
+ * Human-readable labels for GitHub notification reasons.
+ */
+const REASON_LABELS = {
+    assign: 'Assigned',
+    author: 'Author',
+    comment: 'Comment',
+    ci_activity: 'CI Activity',
+    invitation: 'Invitation',
+    manual: 'Manual',
+    mention: 'Mentioned',
+    review_requested: 'Review Requested',
+    security_alert: 'Security Alert',
+    state_change: 'State Change',
+    subscribed: 'Subscribed',
+    team_mention: 'Team Mentioned',
+};
+
+/**
  * Back-off schedule (in seconds) used when consecutive fetch attempts fail.
  * Index 0 is used after the first failure, index 1 after the second, etc.
  * The last value is reused for all subsequent retries.
@@ -153,6 +181,7 @@ export default class GitHubNotificationsExtension extends Extension {
         this._showAlert = this._settings.get_boolean('show-alert');
         this._participatingOnly =
             this._settings.get_boolean('show-participating-only');
+        this._groupBy = this._settings.get_string('group-by');
     }
 
     // ── UI / Panel Indicator ──────────────────────────────────────────────────
@@ -236,6 +265,11 @@ export default class GitHubNotificationsExtension extends Extension {
      * Called when the menu opens so the list always reflects the latest
      * cached notifications.  Items beyond {@link MAX_MENU_ITEMS} are
      * collapsed into an overflow label.
+     *
+     * When a grouping mode is active, notifications are bucketed by the
+     * selected key and each group is preceded by a non-reactive header
+     * label.  The {@link MAX_MENU_ITEMS} cap applies to the total number
+     * of notification rows (headers are not counted).
      */
     _rebuildNotificationList() {
         this._notifSection.removeAll();
@@ -250,8 +284,30 @@ export default class GitHubNotificationsExtension extends Extension {
         }
 
         const items = this._notifications.slice(0, MAX_MENU_ITEMS);
-        for (const notif of items)
-            this._notifSection.addMenuItem(this._createNotificationItem(notif));
+
+        if (this._groupBy === 'none' || !this._groupBy) {
+            /* Flat list — original behaviour */
+            for (const notif of items)
+                this._notifSection.addMenuItem(
+                    this._createNotificationItem(notif));
+        } else {
+            /* Grouped list */
+            const groups = this._groupNotifications(items, this._groupBy);
+
+            for (const [label, notifs] of groups) {
+                /* Group header */
+                const header = new PopupMenu.PopupMenuItem(
+                    `${label}  (${notifs.length})`, {
+                        reactive: false,
+                        style_class: 'github-notif-group-header',
+                    });
+                this._notifSection.addMenuItem(header);
+
+                for (const notif of notifs)
+                    this._notifSection.addMenuItem(
+                        this._createNotificationItem(notif));
+            }
+        }
 
         /* Show overflow indicator when there are more items */
         if (this._notifications.length > MAX_MENU_ITEMS) {
@@ -263,6 +319,51 @@ export default class GitHubNotificationsExtension extends Extension {
                 });
             this._notifSection.addMenuItem(moreItem);
         }
+    }
+
+    /**
+     * Group an array of notification objects by the given key.
+     *
+     * Returns an array of `[label, notifs[]]` pairs in the order the
+     * first notification of each group was encountered (i.e. preserving
+     * the chronological ordering from the API).
+     *
+     * @param {Object[]} notifications — slice of notifications to group.
+     * @param {'repo'|'type'|'reason'} key — grouping mode.
+     * @returns {Array<[string, Object[]]>}
+     */
+    _groupNotifications(notifications, key) {
+        const map = new Map();
+
+        for (const notif of notifications) {
+            let groupKey;
+            let groupLabel;
+
+            switch (key) {
+            case 'repo':
+                groupKey = notif.repository?.full_name ?? 'Unknown';
+                groupLabel = groupKey;
+                break;
+            case 'type':
+                groupKey = notif.subject?.type ?? 'Other';
+                groupLabel = TYPE_LABELS[groupKey] ?? groupKey;
+                break;
+            case 'reason':
+                groupKey = notif.reason ?? 'other';
+                groupLabel = REASON_LABELS[groupKey] ?? groupKey;
+                break;
+            default:
+                groupKey = 'All';
+                groupLabel = 'All';
+            }
+
+            if (!map.has(groupKey))
+                map.set(groupKey, {label: groupLabel, items: []});
+
+            map.get(groupKey).items.push(notif);
+        }
+
+        return [...map.entries()].map(([_key, val]) => [val.label, val.items]);
     }
 
     /**

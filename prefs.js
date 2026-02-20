@@ -293,6 +293,36 @@ export default class GitHubNotificationsPreferences extends ExtensionPreferences
         });
         page.add(appearanceGroup);
 
+        /* Group notifications by */
+        const groupByModel = new Gtk.StringList();
+        groupByModel.append(_('None'));
+        groupByModel.append(_('Repository'));
+        groupByModel.append(_('Type'));
+        groupByModel.append(_('Reason'));
+
+        const GROUP_BY_VALUES = ['none', 'repo', 'type', 'reason'];
+
+        const groupByRow = new Adw.ComboRow({
+            title: _('Group Notifications By'),
+            subtitle: _('How to group notifications in the popup menu'),
+            model: groupByModel,
+        });
+
+        /* Initialise the combo from the current setting */
+        const currentGroupBy = settings.get_string('group-by');
+        const currentIdx = GROUP_BY_VALUES.indexOf(currentGroupBy);
+        if (currentIdx >= 0)
+            groupByRow.set_selected(currentIdx);
+
+        /* Write back to GSettings when the user picks a different option */
+        groupByRow.connect('notify::selected', () => {
+            const idx = groupByRow.get_selected();
+            if (idx >= 0 && idx < GROUP_BY_VALUES.length)
+                settings.set_string('group-by', GROUP_BY_VALUES[idx]);
+        });
+
+        appearanceGroup.add(groupByRow);
+
         /* Auto-hide indicator when no notifications */
         const hideWidgetRow = new Adw.SwitchRow({
             title: _('Auto-hide Indicator'),
