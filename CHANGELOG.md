@@ -4,6 +4,20 @@ All notable changes to GitHub Notifications Redux are documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.0] - 2026-02-19
+
+### Added
+
+- "Group Notifications By" option in Appearance preferences with four modes:
+  None (flat list, default), Repository, Type (PR/Issue/Commit/Release), and
+  Reason (mention, review requested, subscribed, etc.). When grouping is active,
+  the popup menu displays section headers with a count badge followed by the
+  notifications in that group.
+
+### Changed
+
+- Extension metadata version bumped to 2.
+
 ## [1.0.2] - 2026-02-11
 
 ### Fixed
@@ -93,6 +107,7 @@ First release targeting GNOME Shell 49, fully compliant with
   `_buildBehaviorPage`).
 - Comprehensive JSDoc and inline comments added to all files.
 
+[1.1.0]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/releases/tag/v1.0.0
