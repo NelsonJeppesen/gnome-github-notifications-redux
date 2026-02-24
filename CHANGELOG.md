@@ -4,7 +4,13 @@ All notable changes to GitHub Notifications Redux are documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.1.4] - 2026-02-24
+## [6] - 2026-02-24
+
+### Added
+
+- Source Code link in the preferences About section that opens the GitHub
+  repository in the default browser.
+- Version number displayed in the preferences panel (Behavior > About).
 
 ### Changed
 
@@ -13,20 +19,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   manual `glib-compile-schemas` step.
 - Nix flake inputs updated.
 
-## [1.1.3] - 2026-02-24
-
-### Added
-
-- Source Code link in the preferences About section that opens the GitHub
-  repository in the default browser.
-
-## [1.1.2] - 2026-02-24
-
-### Added
-
-- Version number displayed in the preferences panel (Behavior > About).
-
-## [1.1.1] - 2026-02-24
+## [5] - 2026-02-24
 
 ### Fixed
 
@@ -52,7 +45,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Unreachable 304 NOT_MODIFIED handling — the server never returns 304 since
   If-Modified-Since is never sent.
 
-## [1.1.0] - 2026-02-19
+## [4] - 2026-02-19
 
 ### Added
 
@@ -62,11 +55,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the popup menu displays section headers with a count badge followed by the
   notifications in that group.
 
-### Changed
-
-- Extension metadata version bumped to 2.
-
-## [1.0.2] - 2026-02-11
+## [3] - 2026-02-11
 
 ### Fixed
 
@@ -79,7 +68,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the release details to resolve the correct tag-based URL
   (`/releases/tag/v1.2.3`), with a fallback to the repo's releases page.
 
-## [1.0.1] - 2026-02-10
+## [2] - 2026-02-10
 
 ### Fixed
 
@@ -87,7 +76,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   sending `If-Modified-Since` on polling requests so every fetch gets the full
   unread notification list instead of a potentially stale 304 Not Modified.
 
-## [1.0.0] - 2026-02-09
+## [1] - 2026-02-09
 
 First release targeting GNOME Shell 49, fully compliant with
 [GNOME Extensions Review Guidelines](https://gjs.guide/extensions/review-guidelines/review-guidelines.html).
@@ -155,11 +144,9 @@ First release targeting GNOME Shell 49, fully compliant with
   `_buildBehaviorPage`).
 - Comprehensive JSDoc and inline comments added to all files.
 
-[1.1.4]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.1.3...v1.1.4
-[1.1.3]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.1.2...v1.1.3
-[1.1.2]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.1.1...v1.1.2
-[1.1.1]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.1.0...v1.1.1
-[1.1.0]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.0.2...v1.1.0
-[1.0.2]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.0.1...v1.0.2
-[1.0.1]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.0.0...v1.0.1
-[1.0.0]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/releases/tag/v1.0.0
+[6]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v5...v6
+[5]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v4...v5
+[4]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v3...v4
+[3]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v2...v3
+[2]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1...v2
+[1]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/releases/tag/v1
