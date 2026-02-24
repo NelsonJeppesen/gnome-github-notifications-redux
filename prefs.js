@@ -341,5 +341,17 @@ export default class GitHubNotificationsPreferences extends ExtensionPreferences
         settings.bind('hide-notification-count', hideCountRow, 'active',
             Gio.SettingsBindFlags.DEFAULT);
         appearanceGroup.add(hideCountRow);
+
+        /* ── About group ──────────────────────────────────────────────── */
+        const aboutGroup = new Adw.PreferencesGroup({
+            title: _('About'),
+        });
+        page.add(aboutGroup);
+
+        aboutGroup.add(new Adw.ActionRow({
+            title: _('Version'),
+            subtitle: `${this.metadata.version}`,
+            activatable: false,
+        }));
     }
 }

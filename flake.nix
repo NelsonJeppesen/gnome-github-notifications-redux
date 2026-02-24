@@ -24,7 +24,7 @@
         # Build the extension zip package
         extension = pkgs.stdenv.mkDerivation {
           pname = "gnome-github-notifications-redux";
-          version = "1.1.1";
+          version = "1.1.2";
 
           src = ./.;
 
