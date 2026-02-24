@@ -98,7 +98,6 @@ export default class GitHubNotificationsExtension extends Extension {
     enable() {
         /* Mutable state — reset on every enable cycle */
         this._notifications = [];
-        this._lastModified = null;
         this._githubInterval = 60;     // seconds; updated from X-Poll-Interval
         this._retryAttempts = 0;
         this._timeoutId = null;
@@ -127,7 +126,6 @@ export default class GitHubNotificationsExtension extends Extension {
                 if (key === 'domain' || key === 'token')
                     this._initHttp();
 
-                this._lastModified = null;   // force full re-fetch (not 304)
                 this._stopLoop();
                 this._scheduleFetch(5, false);
             },
@@ -163,7 +161,6 @@ export default class GitHubNotificationsExtension extends Extension {
 
         this._settings = null;
         this._notifications = [];
-        this._lastModified = null;
     }
 
     // ── Settings ──────────────────────────────────────────────────────────────
@@ -238,7 +235,6 @@ export default class GitHubNotificationsExtension extends Extension {
         });
 
         this._indicator.menu.addAction('Refresh Now', () => {
-            this._lastModified = null;   // force full re-fetch
             this._stopLoop();
             this._fetchNotifications();
         });
@@ -494,16 +490,19 @@ export default class GitHubNotificationsExtension extends Extension {
      * Standard GitHub:   https://api.github.com/notifications
      * GitHub Enterprise:  https://DOMAIN/api/v3/notifications
      *
+     * @param {string} [path='notifications'] — API path segment.
+     * @param {boolean} [addParticipating=true] — append ?participating=true when enabled.
      * @returns {string} The API URL.
      */
-    _buildApiUrl(path = 'notifications') {
+    _buildApiUrl(path = 'notifications', addParticipating = true) {
         const base = this._domain === 'github.com'
             ? `https://api.github.com`
             : `https://${this._domain}/api/v3`;
 
         let url = `${base}/${path}`;
-        if (path === 'notifications' && this._participatingOnly)
-            url += '?participating=1';
+        if (addParticipating && path === 'notifications' &&
+            this._participatingOnly)
+            url += '?participating=true';
 
         return url;
     }
@@ -574,10 +573,8 @@ export default class GitHubNotificationsExtension extends Extension {
     /**
      * Fetch unread notifications from the GitHub API.
      *
-     * Uses conditional requests (If-Modified-Since) to avoid wasting API
-     * quota when the notification list hasn't changed.  On success, updates
-     * the cached list and schedules the next poll.  On failure, enters
-     * exponential back-off.
+     * On success, updates the cached list and schedules the next poll.
+     * On failure, enters exponential back-off.
      */
     async _fetchNotifications() {
         if (!this._token || !this._httpSession) {
@@ -594,27 +591,18 @@ export default class GitHubNotificationsExtension extends Extension {
         message.get_request_headers().append(
             'Accept', 'application/vnd.github+json');
 
-        /*
-         * Skip conditional requests (If-Modified-Since) so that every poll
-         * returns the full unread notification list.  The 304 shortcut can
-         * cause stale/incomplete results when notifications arrive between
-         * polls.
-         */
-
         try {
             const bytes = await this._httpSession.send_and_read_async(
                 message, GLib.PRIORITY_DEFAULT, null);
 
+            /* Guard: extension may have been disabled during await */
+            if (!this._httpSession)
+                return;
+
             const status = message.get_status();
 
-            if (status === Soup.Status.OK ||
-                status === Soup.Status.NOT_MODIFIED) {
+            if (status === Soup.Status.OK) {
                 const responseHeaders = message.get_response_headers();
-
-                /* Cache the Last-Modified header (informational) */
-                const lastMod = responseHeaders.get_one('Last-Modified');
-                if (lastMod)
-                    this._lastModified = lastMod;
 
                 /* Respect GitHub's requested poll interval */
                 const pollInterval =
@@ -622,13 +610,17 @@ export default class GitHubNotificationsExtension extends Extension {
                 if (pollInterval)
                     this._githubInterval = parseInt(pollInterval, 10) || 60;
 
-                /* Parse the notification payload on 200 OK */
-                if (status === Soup.Status.OK && bytes) {
+                /* Parse the notification payload */
+                if (bytes) {
                     const data = bytes.get_data();
                     if (data) {
                         const text = new TextDecoder('utf-8').decode(data);
                         const parsed = JSON.parse(text);
-                        this._updateNotifications(parsed);
+                        if (Array.isArray(parsed))
+                            this._updateNotifications(parsed);
+                        else
+                            console.error(
+                                '[GitHub Notifications] Unexpected API response (not an array)');
                     }
                 }
 
@@ -668,7 +660,7 @@ export default class GitHubNotificationsExtension extends Extension {
         if (!this._token || !this._httpSession)
             return;
 
-        const url = this._buildApiUrl();
+        const url = this._buildApiUrl('notifications', false);
         const message = Soup.Message.new('PUT', url);
 
         message.get_request_headers().append(
@@ -688,6 +680,10 @@ export default class GitHubNotificationsExtension extends Extension {
             await this._httpSession.send_and_read_async(
                 message, GLib.PRIORITY_DEFAULT, null);
 
+            /* Guard: extension may have been disabled during await */
+            if (!this._httpSession)
+                return;
+
             const status = message.get_status();
 
             /* 205, 200, or 204 all indicate success */
@@ -697,7 +693,8 @@ export default class GitHubNotificationsExtension extends Extension {
                 this._notifications = [];
                 this._label?.set_text('0');
                 this._updateVisibility();
-                this._rebuildNotificationList();
+                if (this._notifSection)
+                    this._rebuildNotificationList();
             } else {
                 console.error(
                     `[GitHub Notifications] Mark-all-read failed: HTTP ${status}`);
@@ -880,6 +877,10 @@ export default class GitHubNotificationsExtension extends Extension {
             const bytes = await this._httpSession.send_and_read_async(
                 message, GLib.PRIORITY_DEFAULT, null);
 
+            /* Guard: extension may have been disabled during await */
+            if (!this._httpSession)
+                return null;
+
             if (message.get_status() !== Soup.Status.OK || !bytes)
                 return null;
 
@@ -964,6 +965,10 @@ export default class GitHubNotificationsExtension extends Extension {
             await this._httpSession.send_and_read_async(
                 message, GLib.PRIORITY_DEFAULT, null);
 
+            /* Guard: extension may have been disabled during await */
+            if (!this._httpSession)
+                return;
+
             const status = message.get_status();
 
             /* 205 Reset Content is the documented success code */
@@ -974,7 +979,8 @@ export default class GitHubNotificationsExtension extends Extension {
                     this._notifications.filter(n => n.id !== threadId);
                 this._label?.set_text(`${this._notifications.length}`);
                 this._updateVisibility();
-                this._rebuildNotificationList();
+                if (this._notifSection)
+                    this._rebuildNotificationList();
             } else {
                 console.error(
                     `[GitHub Notifications] Mark-thread-read failed: HTTP ${status}`);

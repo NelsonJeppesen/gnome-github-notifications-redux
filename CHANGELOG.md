@@ -4,6 +4,32 @@ All notable changes to GitHub Notifications Redux are documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.1] - 2026-02-24
+
+### Fixed
+
+- Race condition: async methods (`_fetchNotifications`, `_markAllRead`,
+  `_markThreadRead`, `_openSingleNotification`, `_fetchReleaseTagUrl`) could
+  continue executing after `disable()` nulled internal state, causing crashes
+  or leaked GLib timeout sources. Added post-await guard checks.
+- `_rebuildNotificationList()` could crash when called after `disable()` nulled
+  `_notifSection`. Now guarded with a null check after async operations.
+- `?participating=1` was incorrectly appended to the PUT mark-all-read URL;
+  the GitHub API does not document this parameter on PUT. Now only appended to
+  GET requests.
+- `participating=1` changed to `participating=true` to match the GitHub API
+  documentation.
+- No validation that the API response was an array — a non-array JSON response
+  (e.g. `{"message":"Bad credentials"}`) would corrupt state and show
+  "undefined" in the count label. Now validates with `Array.isArray()`.
+
+### Removed
+
+- Dead `_lastModified` field — was cached from responses but never sent in any
+  request header (If-Modified-Since was deliberately removed in v1.0.1).
+- Unreachable 304 NOT_MODIFIED handling — the server never returns 304 since
+  If-Modified-Since is never sent.
+
 ## [1.1.0] - 2026-02-19
 
 ### Added
@@ -47,7 +73,7 @@ First release targeting GNOME Shell 49, fully compliant with
 ### Added
 
 - Notification count indicator in the top panel with configurable refresh
-  interval (15 s – 5 min).
+  interval (60 s minimum, respects GitHub's X-Poll-Interval).
 - Inline notification list in the popup menu showing repository name, subject
   title, type icon, open-in-browser button, and mark-as-read button (up to 25
   items with overflow indicator).
@@ -107,6 +133,7 @@ First release targeting GNOME Shell 49, fully compliant with
   `_buildBehaviorPage`).
 - Comprehensive JSDoc and inline comments added to all files.
 
+[1.1.1]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.0.0...v1.0.1
