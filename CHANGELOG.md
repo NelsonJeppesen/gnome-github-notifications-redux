@@ -4,6 +4,15 @@ All notable changes to GitHub Notifications Redux are documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.4] - 2026-02-24
+
+### Changed
+
+- Compiled GSettings schema (`schemas/gschemas.compiled`) is now tracked in the
+  repository so the extension works immediately after cloning without requiring a
+  manual `glib-compile-schemas` step.
+- Nix flake inputs updated.
+
 ## [1.1.3] - 2026-02-24
 
 ### Added
@@ -146,6 +155,7 @@ First release targeting GNOME Shell 49, fully compliant with
   `_buildBehaviorPage`).
 - Comprehensive JSDoc and inline comments added to all files.
 
+[1.1.4]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.1.3...v1.1.4
 [1.1.3]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.1.0...v1.1.1

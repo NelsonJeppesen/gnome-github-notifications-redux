@@ -1,7 +1,7 @@
 {
     "uuid": "github-notifications-redux@jeppesen.io",
     "name": "GitHub Notifications Redux",
-    "version": 5,
+    "version": 6,
     "description": "Show GitHub notification count in the top panel with desktop alerts. Click to open GitHub notifications in your browser.",
     "shell-version": ["49"],
     "url": "https://github.com/NelsonJeppesen/gnome-github-notifications-redux",
