@@ -1,5 +1,7 @@
 # GitHub Notifications Redux
 
+![Screenshot](screenshot.png)
+
 A GNOME Shell 49 extension that shows your GitHub notification count in the
 top panel with a rich popup menu for browsing, opening, and dismissing
 individual notifications.
