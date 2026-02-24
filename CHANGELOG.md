@@ -4,6 +4,13 @@ All notable changes to GitHub Notifications Redux are documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.3] - 2026-02-24
+
+### Added
+
+- Source Code link in the preferences About section that opens the GitHub
+  repository in the default browser.
+
 ## [1.1.2] - 2026-02-24
 
 ### Added
@@ -139,6 +146,7 @@ First release targeting GNOME Shell 49, fully compliant with
   `_buildBehaviorPage`).
 - Comprehensive JSDoc and inline comments added to all files.
 
+[1.1.3]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/NelsonJeppesen/gnome-github-notifications-redux/compare/v1.0.2...v1.1.0

@@ -353,5 +353,17 @@ export default class GitHubNotificationsPreferences extends ExtensionPreferences
             subtitle: `${this.metadata.version}`,
             activatable: false,
         }));
+
+        const repoRow = new Adw.ActionRow({
+            title: _('Source Code'),
+            subtitle: this.metadata.url,
+            activatable: true,
+        });
+        repoRow.add_suffix(
+            new Gtk.Image({icon_name: 'adw-external-link-symbolic'}));
+        repoRow.connect('activated', () => {
+            Gtk.show_uri(null, this.metadata.url, 0);
+        });
+        aboutGroup.add(repoRow);
     }
 }
